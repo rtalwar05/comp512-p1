@@ -55,22 +55,33 @@ public class Middleware implements IResourceManager {
 
         try {
             // connect to backend RMs
+            connectRM(flighthost, s_rmiPort, s_flightRMName);
+            connectRM(carhost, s_rmiPort, s_carRMName);
+            connectRM(roomhost, s_rmiPort, s_roomRMName);
+
             Middleware middleware = new Middleware();
-            middleware.connectRM(flighthost, s_rmiPort, s_flightRMName);
-            middleware.connectRM(carhost, s_rmiPort, s_carRMName);
-            middleware.connectRM(roomhost, s_rmiPort, s_roomRMName);
+            IResourceManager stub = (IResourceManager) java.rmi.server.UnicastRemoteObject.exportObject(middleware, 0);
 
-            middleware.start();
+            //bind middleware to RMI registry
+            Registry registry;
+            try {
+                //check if registry exists
+                registry = LocateRegistry.getRegistry(s_rmiPort);
+                registry.list();
+            } catch (RemoteException e) {
+                //create if it doesn't load/exist
+                registry = LocateRegistry.createRegistry(s_rmiPort);
+            }
 
-
-            //
-
+            registry.rebind(s_serverName, stub);
+            System.out.println("'" + s_serverName + "' middleware server ready and bound to '" + s_serverName + "'")
 
         } catch (Exception e) {
             System.err.println("Middleware exception: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
+
     }
 
         public void connectRM(String server ,int port, String name)
